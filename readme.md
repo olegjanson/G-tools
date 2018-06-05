@@ -1,10 +1,10 @@
-<script type="text/javascript" async
-  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML">
-</script>
-Short description
-=================
+G-tools
+=======
 
-The *interactive* scripts \`aw2giw`and`aw2gtau\`\` calculate the Green's function (either on the imaginary time axis or on the Matsubara axis) from a given spectral function. The latter is read from a two-column (first column: frequency, second column: spectral function) file.
+Short description
+-----------------
+
+The *interactive* scripts \`aw2giw\` and \`aw2gtau\` calculate the Green's function (either on the imaginary time axis or on the Matsubara axis) from a given spectral function. The latter is read from a two-column (first column: frequency, second column: spectral function) file.
 
 `hk2gwfw` is an *interactive* script which processes a Hamiltonian in the `*.hk` format. Output is one of the following:
 
@@ -15,7 +15,7 @@ The *interactive* scripts \`aw2giw`and`aw2gtau\`\` calculate the Green's functio
 Calculations can be done either on the real frequency axis, or on the Matsubara axis. What exactly to print is decided by the user. For instance, you can print only diagonal or only nondiagonal elements. For complex quantities, you can print the real part, the imaginary part, both (two columns) or the absolute value.
 
 How to install and run
-======================
+----------------------
 
 You need:
 
@@ -30,9 +30,9 @@ Adjust the first three lines of `Makefile` accordingly and run
 This will create three executables: `aw2giw.o`, `aw2gtau.o`, and `hk2gwawfw.o`. All three codes are interactive, simply execute them. Sample spectral functions and H(k) Hamiltonians can be found in the folder `examples`.
 
 Physics behind
-==============
+--------------
 
-From a spectral function to the corresponding non-interacting Green's function:
+*(needs MathJax, or check in `readme.pdf`)* From a spectral function to the corresponding non-interacting Green's function:
 
 \[
 G(\tau) = \int_{\omega_{min}}^{\omega_{max}}{d\omega \frac{e^{(\mu-\omega)\tau}}{1 + e^{(\mu-\omega)\beta}}A(\omega)}

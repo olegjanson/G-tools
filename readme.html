@@ -1,8 +1,9 @@
 <script type="text/javascript" async
   src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML">
 </script>
-<h1 id="short-description">Short description</h1>
-<p>The <em>interactive</em> scripts `aw2giw<code>and</code>aw2gtau`` calculate the Green's function (either on the imaginary time axis or on the Matsubara axis) from a given spectral function. The latter is read from a two-column (first column: frequency, second column: spectral function) file.</p>
+<h1 id="g-tools">G-tools</h1>
+<h2 id="short-description">Short description</h2>
+<p>The <em>interactive</em> scripts `aw2giw` and `aw2gtau` calculate the Green's function (either on the imaginary time axis or on the Matsubara axis) from a given spectral function. The latter is read from a two-column (first column: frequency, second column: spectral function) file.</p>
 <p><code>hk2gwfw</code> is an <em>interactive</em> script which processes a Hamiltonian in the <code>*.hk</code> format. Output is one of the following:</p>
 <ul>
 <li>Green's function</li>
@@ -10,7 +11,7 @@
 <li>Hybridization function</li>
 </ul>
 <p>Calculations can be done either on the real frequency axis, or on the Matsubara axis. What exactly to print is decided by the user. For instance, you can print only diagonal or only nondiagonal elements. For complex quantities, you can print the real part, the imaginary part, both (two columns) or the absolute value.</p>
-<h1 id="how-to-install-and-run">How to install and run</h1>
+<h2 id="how-to-install-and-run">How to install and run</h2>
 <p>You need:</p>
 <ul>
 <li>a C++ compiler supporting the C++11 standard</li>
@@ -20,8 +21,8 @@
 <p>Adjust the first three lines of <code>Makefile</code> accordingly and run</p>
 <pre><code>make all</code></pre>
 <p>This will create three executables: <code>aw2giw.o</code>, <code>aw2gtau.o</code>, and <code>hk2gwawfw.o</code>. All three codes are interactive, simply execute them. Sample spectral functions and H(k) Hamiltonians can be found in the folder <code>examples</code>.</p>
-<h1 id="physics-behind">Physics behind</h1>
-<p>From a spectral function to the corresponding non-interacting Green's function:</p>
+<h2 id="physics-behind">Physics behind</h2>
+<p><em>(needs MathJax, or check in <code>readme.pdf</code>)</em> From a spectral function to the corresponding non-interacting Green's function:</p>
 <p><br /><span class="math display">$$
 G(\tau) = \int_{\omega_{min}}^{\omega_{max}}{d\omega \frac{e^{(\mu-\omega)\tau}}{1 + e^{(\mu-\omega)\beta}}A(\omega)}
 $$</span><br /></p>
