@@ -3,6 +3,20 @@
 const double pi = atan(1)*4;
 const std::complex<double> j(0, 1);
 
+void downfold(Eigen::MatrixXcd *M,
+              Eigen::MatrixXcd *Minv){
+//  a poor man's inverse of the matrix `m`: returns the matrix `m'` such that
+//      m'_ii = (1 / m_ii)
+//      m'_ij = 0 (for i!=j)
+    std::complex<double> one = 1;
+    for (int ii = 0; ii < (*M).rows(); ++ii){
+        for (int jj = 0; jj < (*M).rows(); ++jj){
+	    (*Minv)(ii,jj) = (ii==jj) ? one / (*M)(ii,ii) : 0; 
+        }
+    }
+    return;
+}
+
 int main (int argc, char* argv[]) {
 
     std::cout << "This interactive code evaluates the (non-interacting) ";
@@ -57,7 +71,7 @@ int main (int argc, char* argv[]) {
     std::complex<double> idelta = 3. * (wmax - wmin) * j * (1. / nw); 
 
     char answer;
-    printf("Which matrix elements to print: diagonal (d), nondiagonal (n), or both (a)?");
+    printf("Which matrix elements to print: diagonal (d), nondiagonal (n), or both (b)?");
     if (scanf (" %c",&answer) != 1) {printf("failed to read a value.\n");}
     bool printDiag = false;
     bool printNonDiag = false;
@@ -65,7 +79,7 @@ int main (int argc, char* argv[]) {
  	printDiag = true;
     } else if (answer == 'n') {
  	printNonDiag = true;
-    } else if (answer == 'a') {
+    } else if (answer == 'b') {
         printDiag = true;
         printNonDiag = true;
     } else {
@@ -76,10 +90,16 @@ int main (int argc, char* argv[]) {
     printf("What to print: hybridization function (d), Green's function (g) or spectral function (a)?");
     if (scanf (" %c",&answer) != 1) {printf("failed to read a value.\n");}
     bool printDelta = false;
+    bool doDownfolding = false;
     bool printG = false;
     bool printA = false;
     if (answer == 'd') {
         printDelta = true;
+        printf("Perform downfolding instead of the rigorous matrix inverse (y/n)?");
+        if (scanf (" %c",&answer) != 1) {printf("failed to read a value.\n");}
+        if (answer == 'y') {
+            doDownfolding = true;
+        }
     } else if (answer == 'g') {
         printG = true;
     } else if (answer == 'a') {
@@ -165,7 +185,13 @@ int main (int argc, char* argv[]) {
 	    Gw += Gwkinv.inverse();
         }
         Gw /= Hk.size()/dim/dim;
-        Fw = (w + mu) * Eigen::MatrixXcd::Identity(dim,dim) - Gw.inverse();
+        if (doDownfolding){
+            Eigen::MatrixXcd Gwinv = Eigen::MatrixXcd::Zero(dim, dim);
+            downfold(&Gw, &Gwinv);
+            Fw = (w + mu) * Eigen::MatrixXcd::Identity(dim,dim) - Gwinv;
+        } else {
+            Fw = (w + mu) * Eigen::MatrixXcd::Identity(dim,dim) - Gw.inverse();
+        }
         for (int ii=0; ii < dim; ++ii){
             for (int jj=0; jj < dim; ++jj) {
                 G.push_back( Gw(ii,jj) );
