@@ -4,15 +4,40 @@ const double pi = atan(1)*4;
 const std::complex<double> j(0, 1);
 
 void downfold(Eigen::MatrixXcd *M,
-              Eigen::MatrixXcd *Minv){
-//  a poor man's inverse of the matrix `m`: returns the matrix `m'` such that
-//      m'_ii = (1 / m_ii)
-//      m'_ij = 0 (for i!=j)
-    std::complex<double> one = 1;
-    for (int ii = 0; ii < (*M).rows(); ++ii){
-        for (int jj = 0; jj < (*M).rows(); ++jj){
-	    (*Minv)(ii,jj) = (ii==jj) ? one / (*M)(ii,ii) : 0; 
-        }
+              Eigen::MatrixXcd *Md,
+                           int  blocksize){
+//  downfolding of a matrix: diagonal blocks of the size `blocksize`
+//  are copied from M to Md. If `blocksize`=1, only the diagonal is copied.
+    int nblocks = (*M).rows() / blocksize;
+    for (int bi = 0; bi < nblocks; ++bi){
+        (*Md).block(bi*blocksize,
+                    bi*blocksize,
+                    blocksize,
+                    blocksize) = ((*M).block(bi*blocksize,
+                                             bi*blocksize,
+                                             blocksize,
+                                             blocksize));
+    }
+    return;
+}
+
+void blockwise_inverse(Eigen::MatrixXcd *M,
+                       Eigen::MatrixXcd *Minv,
+                                    int  blocksize){
+//  a blockwise inverse of the matrix `m`: returns a block-diagonal matrix `m'`
+//  whose blocks of the size `blocksize` are inverses of the respective blocks
+//  of `m`, all other matrix elements are zero. If `blocksize=1`, `m'` is a
+//  diagonal matrix with the matrix elements given by (1 / m_ii).
+    int nblocks = (*M).rows() / blocksize;
+    for (int bi = 0; bi < nblocks; ++bi){
+        (*Minv).block(bi*blocksize,
+                      bi*blocksize,
+                      blocksize,
+                      blocksize) = (((*M).block(bi*blocksize,
+                                                bi*blocksize,
+                                                blocksize,
+                                                blocksize)
+                                    ).inverse());
     }
     return;
 }
@@ -91,15 +116,11 @@ int main (int argc, char* argv[]) {
     if (scanf (" %c",&answer) != 1) {printf("failed to read a value.\n");}
     bool printDelta = false;
     bool doDownfolding = false;
+    int blocksize;
     bool printG = false;
     bool printA = false;
     if (answer == 'd') {
         printDelta = true;
-        printf("Perform downfolding instead of the rigorous matrix inverse (y/n)?");
-        if (scanf (" %c",&answer) != 1) {printf("failed to read a value.\n");}
-        if (answer == 'y') {
-            doDownfolding = true;
-        }
     } else if (answer == 'g') {
         printG = true;
     } else if (answer == 'a') {
@@ -107,6 +128,13 @@ int main (int argc, char* argv[]) {
     } else {
         std::cerr << "Did not get it!" << std::endl;
         return 1;
+    }
+    printf("Perform downfolding (y/n)?");
+    if (scanf (" %c",&answer) != 1) {printf("failed to read a value.\n");}
+    if (answer == 'y') {
+        doDownfolding = true;
+        printf("Size of blocks along the diagonal (full inversion within each block):");
+        if (scanf("%i",&blocksize) != 1) {printf("failed to read a value.\n");}
     }
 
     printf("What to print: real part (r), imaginary part (i), or both (b), or the absolute value (a)?");
@@ -162,9 +190,17 @@ int main (int argc, char* argv[]) {
         return 1;
     }
 
+//  check whether `dim` is a multiple of `blocksize`
+    if ((doDownfolding == true) && (dim % blocksize != 0)) {
+        std::cerr << "ERROR: blocksize(" << blocksize
+                  << ") must be a multiple of dim(" << dim << ")" << std::endl;
+        return 1;
+    }
+
 //  calculate the Matsubara frequencies
     std::vector<double> Iw;
     for (int wn=0; wn < nw; ++wn) {Iw.push_back((2*wn + 1) * pi / beta);};
+    
 
 //  ACTUAL CALCULATIONS
 //  Calculate the Green's function G and the hybridization function F: 
@@ -182,16 +218,24 @@ int main (int argc, char* argv[]) {
                     Gwkinv(ii,jj) -= Hk[k*dim*dim + ii*dim + jj];
 	        }
 	    }
-	    Gw += Gwkinv.inverse();
+//            if (doBlockWise){
+//                Eigen::MatrixXcd Gw_blockdiag = Eigen::MatrixXcd::Zero(dim, dim);
+//                downfold(&Gwkinv, &Gw_blockdiag, blocksize);
+//                Gw += Gw_blockdiag;
+//            } else {
+//	        Gw += (Gwkinv.inverse());
+//            }
+            if (doDownfolding) {
+                Eigen::MatrixXcd Gwk_blockdiag = Eigen::MatrixXcd::Zero(dim, dim);
+                Eigen::MatrixXcd Gwk = (Gwkinv.inverse());
+                downfold(&Gwk, &Gwk_blockdiag, blocksize);
+                Gw += Gwk_blockdiag;
+            } else {
+                Gw += (Gwkinv.inverse());
+            }
         }
         Gw /= Hk.size()/dim/dim;
-        if (doDownfolding){
-            Eigen::MatrixXcd Gwinv = Eigen::MatrixXcd::Zero(dim, dim);
-            downfold(&Gw, &Gwinv);
-            Fw = (w + mu) * Eigen::MatrixXcd::Identity(dim,dim) - Gwinv;
-        } else {
-            Fw = (w + mu) * Eigen::MatrixXcd::Identity(dim,dim) - Gw.inverse();
-        }
+        Fw = (w + mu) * Eigen::MatrixXcd::Identity(dim,dim) - (Gw.inverse());
         for (int ii=0; ii < dim; ++ii){
             for (int jj=0; jj < dim; ++jj) {
                 G.push_back( Gw(ii,jj) );
@@ -325,19 +369,19 @@ int main (int argc, char* argv[]) {
 
 //      print diagonal elements + the spectral function
         if (printDiag){
-            for (int y = 0; y < dim; ++y){
+            for (int ii = 0; ii < dim; ++ii){
                 if (printDelta){
-                    if (printReal) {output << " " << Fw(y,y).real();}
-                    if (printImag) {output << " " << Fw(y,y).imag();}
-                    if (printAbs)  {output << " " << abs(Fw(y,y));}
+                    if (printReal) {output << " " << Fw(ii,ii).real();}
+                    if (printImag) {output << " " << Fw(ii,ii).imag();}
+                    if (printAbs)  {output << " " << abs(Fw(ii,ii));}
                 }
                 if (printG){
-                    if (printReal) {output << " " << Gw(y,y).real();}
-                    if (printImag) {output << " " << Gw(y,y).imag();}
-                    if (printAbs)  {output << " " << abs(Gw(y,y));}
+                    if (printReal) {output << " " << Gw(ii,ii).real();}
+                    if (printImag) {output << " " << Gw(ii,ii).imag();}
+                    if (printAbs)  {output << " " << abs(Gw(ii,ii));}
                 }
                 if (printA){
-                    output << " " << -1. / pi * Gw(y,y).imag();
+                    output << " " << -1. / pi * Gw(ii,ii).imag();
                 }
             }
         }
